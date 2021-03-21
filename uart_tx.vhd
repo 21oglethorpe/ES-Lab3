@@ -1,89 +1,95 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date: 03/18/2021 11:37:06 PM
--- Design Name: 
--- Module Name: uart_tx - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
-----------------------------------------------------------------------------------
-
+--
+-- written by Gregory Leonberg
+-- fall 2017
+--
+---------------------------------------------------------------------------
 
 library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity uart_tx is
-port (
-clk , en , send , rst : in std_logic ;
-char : in std_logic_vector (7 downto 0) ;
-ready , tx : out std_logic
-) ;
-end uart_tx ;
+entity uart_tb is
+end uart_tb;
 
-architecture Behavioral of uart_tx is
+architecture tb of uart_tb is
 
-type state_type is (idle, start, data);
-signal curr : state_type := idle;
-    signal count : std_logic_vector(2 downto 0) := (others => '0');
-    signal inshift : std_logic_vector(3 downto 0) := (others => '0');
-signal maj: std_logic;
-signal datareg: std_logic_vector(7 downto 0):= (others => '0');
+    component uart port (
+    clk, en, send, rx, rst  : in std_logic;
+    charSend                : in std_logic_vector(7 downto 0);
+    ready, tx, newChar      : out std_logic;
+    charRec                 : out std_logic_vector(7 downto 0)
+    );
+    end component;
+
+    type str is array (0 to 4) of std_logic_vector(7 downto 0);
+    signal word : str := (x"48", x"65", x"6C", x"6C", x"6F");
+
+    signal rst : std_logic := '0';
+    signal clk, en, send, rx, ready, tx, newChar : std_logic := '0';
+    signal charSend, charRec : std_logic_vector(7 downto 0) := (others => '0');
+
 begin
- 
- process(clk) begin
-   if rising_edge(clk) then
 
-       -- resets the state machine and its outputs
-       if rst = '1' then
+    -- the sender UART
+    dut: uart port map(
+        clk => clk,
+        en => en,
+        send => send,
+        rx => tx,
+        rst => rst,
+        charSend => charSend,
+        ready => ready,
+        tx => tx,
+        newChar => newChar,
+        charRec => charRec);
 
-           datareg <= (others => '0');
-           curr <= idle;
-       -- usual operation
-       -- usual operation
-        elsif en = '1' then
-            case curr is
 
-                when idle =>
-                    ready <= '1';
-                    if send = '1' then
-                        curr <= start;
-                    end if;
+    -- clock process @125 MHz
+    process begin
+        clk <= '0';
+        wait for 4 ns;
+        clk <= '1';
+        wait for 4 ns;
+    end process;
 
-                when start =>
-                    datareg <= char;
-                    count <= (others => '0');
-                    ready <= '0';
-                    curr <= data;
+    -- en process @ 125 MHz / 1085 = ~115200 Hz
+    process begin
+        en <= '0';
+        wait for 8680 ns;
+        en <= '1';
+        wait for 8 ns;
+    end process;
 
-                when data =>
-                    if unsigned(count) < 7 then
-                        tx <= datareg(0);
-                        datareg <=  datareg(7 downto 1) & '0';
-                        count <= std_logic_vector(unsigned(count) + 1);
+    -- signal stimulation process
+    process begin
 
-                   
-                    else
-                        curr <= idle;
-                    end if;
+        rst <= '1';
+        wait for 100 ns;
+        rst <= '0';
+        wait for 100 ns;
 
-                when others =>
-                    curr <= idle;
+        for index in 0 to 4 loop
+            wait until ready = '1' and en = '1';
+            charSend <= word(index);
+            send <= '1';
+            wait for 200 ns;
+            charSend <= (others => '0');
+            send <= '0';
+            wait until ready = '1' and en = '1' and newChar = '1';
 
-            end case;
-        end if;
+            if charRec /= word(index) then
+                report "Send/Receive MISMATCH at time: " & time'image(now) &
+                lf & "expected: " &
+                integer'image(to_integer(unsigned(word(index)))) &
+                lf & "received: " & integer'image(to_integer(unsigned(charRec)))
+                severity ERROR;
+            end if;
 
-   end if;
-   end process;
+        end loop;
 
-end Behavioral;
+        wait for 1000 ns;
+        report "End of testbench" severity FAILURE;
+
+    end process;
+
+end tb;
