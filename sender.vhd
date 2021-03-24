@@ -50,12 +50,12 @@ architecture Behavioral of sender is
    signal i : integer := 0;
 type memory is array (0 to 5) of std_logic_vector(7 downto 0);
 constant NETID : memory := (
-0 => "01101010",
-1 => "01100011",
-2 => "00110010",
-3 => "00110011",
-4 => "00110111",
-5 => "00110110");
+0 => "01101010",    --j
+1 => "01100011",    --c
+2 => "00110010",    --2
+3 => "00110011",    --3
+4 => "00110111",    --7
+5 => "00110110");   --6
 begin
 process(clk, en, btn, ready, rst)
 begin
@@ -66,6 +66,7 @@ if rising_edge(clk) AND en = '1' then
     case curr is
         when idle =>
             if(ready = '1' AND btn = '1' AND i < n) then
+                send <= '1';
                 char <= NETID(i);
                 i <= i+1;
                 curr <= busyA;
