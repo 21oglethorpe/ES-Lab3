@@ -1,4 +1,3 @@
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use ieee.numeric_std.all;
@@ -12,55 +11,52 @@ end uart_tx ;
 
 architecture Behavioral of uart_tx is
 
-type state_type is (idle, start, data, stop);
+type state_type is (idle, start, data);
 signal curr : state_type := idle;
-signal count : std_logic_vector(2 downto 0) := (others => '0');
+signal count : std_logic_vector(3 downto 0) := (others => '0');
 signal datareg: std_logic_vector(7 downto 0):= (others => '0');
 begin
 
- process(clk, send, en) begin
+ process(clk) begin
    if rising_edge(clk) then
        -- resets the state machine and its outputs
        if rst = '1' then
-
+           tx <= '1';
+           ready <= '1';
            datareg <= (others => '0');
+           count <= (others => '0');
            curr <= idle;
+           end if;
        -- usual operation
-        else
+        if en = '1' then
             case curr is
 
                 when idle =>
                     ready <= '1';
-                    if send = '1' AND en = '1' then
+                    tx <= '1';
+                    if send = '1' then
                         curr <= start;
                         datareg <= char;
-                    ready <= '0';
                     end if;
 
                 when start =>
-                    if en = '1' then
-                    tx <= datareg(0);
-                    datareg <= '0' & datareg(7 downto 1);
-
+                    
+                    tx <= '0';
+                    ready <= '0';
                     count <= (others => '0');
                     curr <= data;
-                    end if;
+                    
                 when data =>
-                    if en = '1' then
-                     if unsigned(count) <6 then
-                     tx <= datareg(0);
+                    
+                     if unsigned(count) <8 then
                      datareg <= '0' & datareg(7 downto 1);
+                     tx <= datareg(0);
+
                      count <= std_logic_vector(unsigned(count) + 1);
-                    elsif unsigned(count) =6 then
-                     tx <= datareg(0);
-                     datareg <= '0' & datareg(7 downto 1);
-                     curr <= stop;
-                     else
-                     curr <= stop;
-                     end if;
-                     end if;
-                when stop =>
+                     elsif unsigned(count) = 8 then
                      curr <= idle;
+                     end if;
+                
                 when others =>
                     
                      curr <= idle;
