@@ -47,7 +47,7 @@ architecture Behavioral of sender is
    -- shift register to read data in
    signal d : std_logic_vector (7 downto 0) := (others => '0');
     constant n: integer := 6;
-   signal i : integer := 0;
+   signal i : std_logic_vector (2 downto 0) := (others => '0');
 type memory is array (0 to 5) of std_logic_vector(7 downto 0);
 constant NETID : memory := (
 0 => "01101010",    --j
@@ -61,17 +61,17 @@ process(clk, en, btn, ready, rst)
 begin
 if rising_edge(clk) then
     
-    if(rst ='1') then char <= (others => '0'); send <= '0'; curr <= idle; i <= 0;
+    if(rst ='1') then char <= (others => '0'); send <= '0'; curr <= idle; i <= (others => '0');
     elsif (en = '1') then
     case curr is
         when idle =>
-            if(ready = '1' AND btn = '1' AND i < n) then
+            if(ready = '1' AND btn = '1' AND unsigned(i) < n) then
                 send <= '1';
-                char <= NETID(i);
-                i <= i+1;
+                char <= NETID(to_integer(unsigned(i)));
+                i <= std_logic_vector(unsigned(i)+1);
                 curr <= busyA;
-            elsif(ready = '1' AND btn = '1' AND i = n)then
-                i <= 0;
+            elsif(ready = '1' AND btn = '1' AND unsigned(i) = n)then
+                i <= (others => '0');
             end if;
         when busyA =>
             curr <= busyB;
@@ -82,7 +82,8 @@ if rising_edge(clk) then
             if(ready = '1' AND btn = '0') then
                 curr <= idle;
             end if;
-            
+        when others =>
+        curr <= idle;
         end case;
 end if;
 end if;
