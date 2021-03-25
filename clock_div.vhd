@@ -17,8 +17,7 @@ begin
     begin
         if rising_edge(clk) then
         
-                --more accurate estimation is 542.53, so frequency will be slightly higher
-                if (unsigned(counter) < 1085) then
+                if (unsigned(counter) < 1080) then
                     counter <= std_logic_vector(unsigned(counter) + 1);
                 else 
                     counter <= (others => '0');
