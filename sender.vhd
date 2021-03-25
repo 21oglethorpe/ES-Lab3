@@ -60,9 +60,9 @@ begin
 process(clk)
 begin
 if rising_edge(clk) then
-    
-    if(rst ='1') then char <= (others => '0'); send <= '0'; curr <= idle; i <= (others => '0');
-    elsif (en = '1') then
+    if (en = '1') then
+    if(rst ='1') then char <= (others => '0'); send <= '0'; curr <= idle; i <= (others => '0'); 
+    else
     case curr is
         when idle =>
             if(ready = '1' AND btn = '1' AND unsigned(i) < unsigned(n)) then
@@ -85,6 +85,7 @@ if rising_edge(clk) then
         when others =>
         curr <= idle;
         end case;
+        end if;
 end if;
 end if;
 end process;
