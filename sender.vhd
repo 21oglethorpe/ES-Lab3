@@ -59,9 +59,9 @@ constant NETID : memory := (
 begin
 process(clk, en, btn, ready, rst)
 begin
-if rising_edge(clk) AND en = '1' then
+if rising_edge(clk) then
     
-    if(rst ='1') then char <= (others => '0'); send <= '0'; curr <= idle;
+    if(rst ='1') then char <= (others => '0'); send <= '0'; curr <= idle; i <= 0;
     elsif (en = '1') then
     case curr is
         when idle =>
