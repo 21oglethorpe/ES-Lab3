@@ -24,7 +24,7 @@ begin
                     counter <= (others => '0');
                 end if;
                     
-                    if (unsigned(counter) = 543) then
+                    if (unsigned(counter) = 0) then
                         div <= '1';
                     else
                         div <= '0';
