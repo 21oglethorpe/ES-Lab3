@@ -46,18 +46,18 @@ architecture Behavioral of sender is
 
    -- shift register to read data in
    signal d : std_logic_vector (7 downto 0) := (others => '0');
-    constant n: integer := 6;
+    constant n: std_logic_vector(2 downto 0) := "110";
    signal i : std_logic_vector (2 downto 0) := (others => '0');
 type memory is array (0 to 5) of std_logic_vector(7 downto 0);
 constant NETID : memory := (
-0 => "01101010",    --j
-1 => "01100011",    --c
-2 => "00110010",    --2
-3 => "00110011",    --3
-4 => "00110111",    --7
-5 => "00110110");   --6
+0 => x"6a",    --j
+1 => x"63",    --c
+2 => x"32",    --2
+3 => x"33",    --3
+4 => x"37",    --7
+5 => x"36");   --6
 begin
-process(clk, en, btn, ready, rst)
+process(clk)
 begin
 if rising_edge(clk) then
     
@@ -65,12 +65,12 @@ if rising_edge(clk) then
     elsif (en = '1') then
     case curr is
         when idle =>
-            if(ready = '1' AND btn = '1' AND unsigned(i) < n) then
+            if(ready = '1' AND btn = '1' AND unsigned(i) < unsigned(n)) then
                 send <= '1';
                 char <= NETID(to_integer(unsigned(i)));
                 i <= std_logic_vector(unsigned(i)+1);
                 curr <= busyA;
-            elsif(ready = '1' AND btn = '1' AND unsigned(i) = n)then
+            elsif(ready = '1' AND btn = '1' AND unsigned(i) = unsigned(n))then
                 i <= (others => '0');
             end if;
         when busyA =>
